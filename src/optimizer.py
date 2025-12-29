@@ -1,6 +1,11 @@
 import numpy as np
 from scipy.optimize import minimize
-from portfolio_metrics import portfolio_return, portfolio_volatility, sharpe_ratio
+from src.portfolio_metrics import (
+    portfolio_return,
+    portfolio_volatility,
+    sharpe_ratio
+)
+
 
 def optimize_portfolio(returns):
     num_assets = len(returns.columns)
