@@ -1,6 +1,8 @@
 from src.data_fetcher import fetch_stock_data
 from src.optimizer import optimize_portfolio
-from src.visualization import plot_weights
+# from src.visualization import plot_weights
+from src.visualization import plot_efficient_frontier
+
 
 tickers = ["AAPL", "MSFT", "GOOGL", "AMZN"]
 data = fetch_stock_data(tickers, "2020-01-01", "2024-01-01")
@@ -12,4 +14,6 @@ print("Optimized Weights:")
 for t, w in zip(tickers, weights):
     print(f"{t}: {w:.2%}")
 
-plot_weights(weights, tickers)
+# plot_weights(weights, tickers)
+plot_efficient_frontier(returns)
+
