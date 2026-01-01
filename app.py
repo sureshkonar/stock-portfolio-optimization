@@ -11,6 +11,7 @@ from src.optimizer import optimize_portfolio, plot_efficient_frontier
 from src.prediction import predict_prophet, predict_lstm, classify_price_trend
 from src.portfolio_metrics import var_cvar
 from src.news_sentiment import get_combined_sentiment
+from src.market_top_stocks import get_top_stocks
 
 # =====================================================
 # Utility: Format Ticker Correctly
@@ -22,6 +23,211 @@ def format_ticker(symbol, market):
     if market == "BSE" and not symbol.endswith(".BO"):
         return symbol + ".BO"
     return symbol
+
+
+# def build_top_market_snapshot(market):
+#     rows = []
+
+#     tickers = get_top_stocks(market)
+
+#     if not tickers:
+#         return pd.DataFrame()
+
+#     price_data = fetch_stock_data(
+#         tickers,
+#         pd.to_datetime("today") - pd.Timedelta(days=365),
+#         pd.to_datetime("today")
+#     )
+
+#     for ticker in tickers:
+#         try:
+#             series = price_data[ticker].dropna()
+
+#             # ---------- Price Prediction ----------
+#             pred = predict_prophet(series)
+
+#             current_price = float(pred["current_price"])
+#             estimated_price = float(pred["predicted_price"])
+
+#             # ---------- Sentiment (SAFE FALLBACK) ----------
+#             try:
+#                 sentiment_data = get_combined_sentiment(ticker, ticker)
+#                 score = sentiment_data.get("score", 0)
+#             except Exception:
+#                 score = 0  # NSE/BSE fallback
+
+#             # ---------- Recommendation (ALWAYS SET) ----------
+#             if estimated_price > current_price * 1.05 and score >= 0.2:
+#                 recommendation = "🟢 Buy"
+#             elif estimated_price < current_price * 0.95 and score <= -0.2:
+#                 recommendation = "🔻 Avoid"
+#             else:
+#                 recommendation = "🟡 Hold"
+
+#             rows.append({
+#                 "Stock": ticker,
+#                 "Current Price": round(current_price, 2),
+#                 "Estimated Price": round(estimated_price, 2),
+#                 "Recommendation": recommendation   # 🔑 ALWAYS EXISTS
+#             })
+
+#         except Exception:
+#             # 🔐 HARD FALLBACK (prevents KeyError)
+#             rows.append({
+#                 "Stock": ticker,
+#                 "Current Price": np.nan,
+#                 "Estimated Price": np.nan,
+#                 "Recommendation": "🟡 Hold"
+#             })
+
+#     return pd.DataFrame(rows)
+
+# def load_top_market_snapshot(market):
+#     tickers = get_top_stocks(market)
+
+#     if not tickers:
+#         raise ValueError("No stocks configured for this market")
+
+#     price_data = fetch_stock_data(
+#         tickers=tickers,
+#         start_date=pd.Timestamp.today() - pd.Timedelta(days=180),
+#         end_date=pd.Timestamp.today()
+#     )
+
+#     rows = []
+
+#     for ticker in tickers:
+#         try:
+#             series = price_data[ticker].dropna()
+
+#             if series.empty:
+#                 continue
+
+#             pred = predict_prophet(series)
+#             trend = classify_price_trend(
+#                 pred["current_price"],
+#                 pred["predicted_price"]
+#             )
+
+#             # ---- SENTIMENT (SAFE FALLBACK) ----
+#             try:
+#                 sentiment_data = get_combined_sentiment(ticker, ticker)
+#                 score = sentiment_data.get("score", 0.0)
+#             except Exception:
+#                 score = 0.0  # 👈 NSE/BSE SAFE DEFAULT
+
+#             recommendation = safe_recommendation(score, trend)
+
+#             rows.append({
+#                 "Stock Name": ticker,
+#                 "Current Price": round(pred["current_price"], 2),
+#                 "Estimated Price": round(pred["predicted_price"], 2),
+#                 "Recommendation": recommendation
+#             })
+
+#         except Exception:
+#             # NEVER break Top 50 view
+#             rows.append({
+#                 "Stock Name": ticker,
+#                 "Current Price": None,
+#                 "Estimated Price": None,
+#                 "Recommendation": "⚠️ Data Unavailable"
+#             })
+
+#     df = pd.DataFrame(rows)
+
+#     # 🔒 GUARANTEE COLUMN EXISTS (CRITICAL FIX)
+#     if "Recommendation" not in df.columns:
+#         df["Recommendation"] = "⚠️ Neutral / Hold , Since no news data found"
+
+#     return df
+
+def build_top_market_snapshot(market: str):
+    """
+    Build Top Market Snapshot using the SAME
+    sentiment + prediction + recommendation logic
+    already used in the app.
+    """
+
+    tickers = get_top_stocks(market)
+
+    if not tickers:
+        raise ValueError("No top stocks configured for this market")
+
+    # Fetch last 6 months of data
+    price_data = fetch_stock_data(
+        tickers=tickers,
+        start=pd.Timestamp.today() - pd.Timedelta(days=180),
+        end=pd.Timestamp.today()
+    )
+
+    rows = []
+
+    for ticker in tickers:
+        try:
+            series = price_data[ticker].dropna()
+
+            if series.empty:
+                raise ValueError("No price data")
+
+            # ----------------------------
+            # Prediction
+            # ----------------------------
+            pred = predict_prophet(series)
+
+            trend = classify_price_trend(
+                pred["current_price"],
+                pred["predicted_price"]
+            )
+
+            # ----------------------------
+            # News Sentiment
+            # ----------------------------
+            try:
+                sentiment_data = get_combined_sentiment(ticker, ticker)
+                sentiment = sentiment_data.get("sentiment", "Neutral")
+                score = sentiment_data.get("score", 0.0)
+            except Exception:
+                sentiment = "Neutral"
+                score = 0.0
+
+            # ----------------------------
+            # Recommendation (UNCHANGED LOGIC)
+            # ----------------------------
+            if score >= 0.6:
+                decision = "🚀 Strong Buy (News Driven)"
+            elif score >= 0.25:
+                decision = "🟢 Buy"
+            elif score <= -0.6:
+                decision = "❌ Strong Avoid"
+            elif score <= -0.25:
+                decision = "🔻 Avoid"
+            else:
+                decision = "🟡 Neutral / No Active Signal"
+
+            rows.append({
+                "Stock Name": ticker,
+                "Current Price": round(pred["current_price"], 2),
+                "Estimated Price": round(pred["predicted_price"], 2),
+                "Recommendation": decision
+            })
+
+        except Exception:
+            # Hard fallback to avoid breaking UI
+            rows.append({
+                "Stock Name": ticker,
+                "Current Price": None,
+                "Estimated Price": None,
+                "Recommendation": "⚠️ Data Unavailable"
+            })
+
+    df = pd.DataFrame(rows)
+
+    # 🔒 Absolute guarantee for Streamlit safety
+    if "Recommendation" not in df.columns:
+        df["Recommendation"] = "⚠️ Neutral / Hold , Since no news data found"
+
+    return df
 
 # =====================================================
 # 🔥 NEW: TOP 50 STOCK UNIVERSE (NO API CHANGE)
@@ -109,7 +315,8 @@ if st.button("Load Top 50 Market Snapshot"):
                     "Recommendation": rec
                 })
 
-            df_top50 = pd.DataFrame(rows)
+            # df_top50 = pd.DataFrame(rows)
+            df_top50 = build_top_market_snapshot(market_view)
 
             st.dataframe(
                 df_top50.sort_values("Recommendation"),
@@ -361,3 +568,61 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+
+# def build_top_market_snapshot(market):
+#     rows = []
+
+#     tickers = get_top_stocks(market)
+
+#     if not tickers:
+#         return pd.DataFrame()
+
+#     price_data = fetch_stock_data(
+#         tickers,
+#         pd.to_datetime("today") - pd.Timedelta(days=365),
+#         pd.to_datetime("today")
+#     )
+
+#     for ticker in tickers:
+#         try:
+#             series = price_data[ticker].dropna()
+
+#             # ---------- Price Prediction ----------
+#             pred = predict_prophet(series)
+
+#             current_price = float(pred["current_price"])
+#             estimated_price = float(pred["predicted_price"])
+
+#             # ---------- Sentiment (SAFE FALLBACK) ----------
+#             try:
+#                 sentiment_data = get_combined_sentiment(ticker, ticker)
+#                 score = sentiment_data.get("score", 0)
+#             except Exception:
+#                 score = 0  # NSE/BSE fallback
+
+#             # ---------- Recommendation (ALWAYS SET) ----------
+#             if estimated_price > current_price * 1.05 and score >= 0.2:
+#                 recommendation = "🟢 Buy"
+#             elif estimated_price < current_price * 0.95 and score <= -0.2:
+#                 recommendation = "🔻 Avoid"
+#             else:
+#                 recommendation = "🟡 Hold"
+
+#             rows.append({
+#                 "Stock": ticker,
+#                 "Current Price": round(current_price, 2),
+#                 "Estimated Price": round(estimated_price, 2),
+#                 "Recommendation": recommendation   # 🔑 ALWAYS EXISTS
+#             })
+
+#         except Exception:
+#             # 🔐 HARD FALLBACK (prevents KeyError)
+#             rows.append({
+#                 "Stock": ticker,
+#                 "Current Price": np.nan,
+#                 "Estimated Price": np.nan,
+#                 "Recommendation": "🟡 Hold"
+#             })
+
+#     return pd.DataFrame(rows)
