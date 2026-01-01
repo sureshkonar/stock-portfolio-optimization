@@ -4,3 +4,6 @@ matplotlib
 yfinance
 scipy
 streamlit
+prophet
+tensorflow
+scipy

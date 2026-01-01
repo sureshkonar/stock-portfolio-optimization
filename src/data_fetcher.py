@@ -1,23 +1,17 @@
 import yfinance as yf
 import pandas as pd
+import streamlit as st
 
+@st.cache_data(show_spinner=True)
 def fetch_stock_data(tickers, start, end):
-    # Force adjusted prices to avoid missing 'Adj Close'
-    data = yf.download(
-        tickers,
-        start=start,
-        end=end,
-        auto_adjust=True,
-        progress=False
-    )
-
-    # If multiple tickers → MultiIndex columns
-    if isinstance(data.columns, pd.MultiIndex):
-        if "Close" in data.columns.levels[0]:
-            data = data["Close"]
-        else:
-            raise ValueError("Expected 'Close' price not found in data")
+    """
+    Fetch adjusted close prices from Yahoo Finance
+    """
+    data = yf.download(tickers, start=start, end=end)
+    if "Adj Close" in data.columns:
+        return data["Adj Close"].dropna()
+    elif isinstance(data.columns, pd.MultiIndex) and "Adj Close" in data.columns.levels[0]:
+        return data["Adj Close"].dropna()
     else:
-        data = data[["Close"]]
-
-    return data
+        # fallback: use 'Close'
+        return data["Close"].dropna()
