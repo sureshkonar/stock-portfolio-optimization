@@ -317,8 +317,11 @@ elif query:
     st.info("👈 Select stocks and click **Run Analysis** to begin.")
 
 
+# from datetime import datetime
+# import pytz
+
 # =====================================================
-# Disclaimer & Footer
+# Disclaimer, Footer & Auto Timestamp
 # =====================================================
 
 st.markdown("---")
@@ -328,32 +331,33 @@ ist = pytz.timezone("Asia/Kolkata")
 last_updated = datetime.now(ist).strftime("%d %b %Y, %I:%M:%S %p IST")
 
 with st.expander("⚠️ Disclaimer & Legal Notice", expanded=False):
-    st.markdown("""
+    st.markdown(f"""
     **Market & Investment Disclaimer**
 
-    This application is built **for educational and informational purposes only**.  
-    It does **not constitute financial, investment, or trading advice**.
+    This application is built **for educational and informational purposes only**  
+    and does **not constitute financial or investment advice**.
 
-    - Stock prices, predictions, and sentiment analysis are based on **historical data, public news sources, and machine learning models**
-    - Financial markets are subject to **sudden volatility, macroeconomic events, and unforeseen risks**
-    - Past performance is **not indicative of future results**
+    - Predictions and recommendations are generated using **historical price data, public news sentiment, and ML models**
     - Market conditions can change rapidly due to **economic, political, or global events**
-    - Data may be **delayed or incomplete**            
-    - Real-time market data and news may be **delayed or incomplete**
+    - Data may be **delayed or incomplete**
+    - Past performance is **not a guarantee of future results**
 
-    **Users are strongly advised to consult a certified financial advisor before making investment decisions.**
+    **Always consult a certified financial advisor before investing.**
+
     ---
-    **Last Updated:** {last_updated}            
+    **Last Updated:** {last_updated}
     """)
 
+st.markdown("---")    
+st.markdown(f"**Last Updated:** {last_updated}")
+
 st.markdown(
-    """
+    f"""
     <div style="text-align:center; font-size:13px; color:gray;">
-        Developed by <b>Suresh Mahalingam Konar</b> | 
+        Developed by <b>Suresh Mahalingam Konar</b><br>
         © 2025 All Rights Reserved<br>
-        Data Source: Yahoo Finance • Google News • Public APIs
+        Data Sources: Yahoo Finance • Google News • Public APIs
     </div>
     """,
     unsafe_allow_html=True
 )
-
