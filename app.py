@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+from datetime import datetime
+import pytz
 from src.stock_search import search_stock
 from src.market_utils import filter_by_market
 from src.data_fetcher import fetch_stock_data
@@ -322,6 +323,10 @@ elif query:
 
 st.markdown("---")
 
+# Auto timestamp (IST by default – change if needed)
+ist = pytz.timezone("Asia/Kolkata")
+last_updated = datetime.now(ist).strftime("%d %b %Y, %I:%M:%S %p IST")
+
 with st.expander("⚠️ Disclaimer & Legal Notice", expanded=False):
     st.markdown("""
     **Market & Investment Disclaimer**
@@ -332,9 +337,13 @@ with st.expander("⚠️ Disclaimer & Legal Notice", expanded=False):
     - Stock prices, predictions, and sentiment analysis are based on **historical data, public news sources, and machine learning models**
     - Financial markets are subject to **sudden volatility, macroeconomic events, and unforeseen risks**
     - Past performance is **not indicative of future results**
+    - Market conditions can change rapidly due to **economic, political, or global events**
+    - Data may be **delayed or incomplete**            
     - Real-time market data and news may be **delayed or incomplete**
 
     **Users are strongly advised to consult a certified financial advisor before making investment decisions.**
+    ---
+    **Last Updated:** {last_updated}            
     """)
 
 st.markdown(
