@@ -10,3 +10,4 @@ torch
 textblob
 requests
 beautifulsoup4
+tensorflow
