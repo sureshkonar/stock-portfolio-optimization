@@ -6,8 +6,8 @@
 ---
 
 ## 🌐 Live Demo
-🔗 **Streamlit App**: https://your-app-name.streamlit.app  
-🔗 **GitHub Repo**: https://github.com/your-username/stock-portfolio-optimization
+🔗 **Streamlit App**: https://stock-portfolio-optimization-suresh-konar.streamlit.app/
+🔗 **GitHub Repo**: https://github.com/sureshkonar/stock-portfolio-optimization
 
 ---
 
