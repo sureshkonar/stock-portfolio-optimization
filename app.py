@@ -310,5 +310,41 @@ if run_button and selected_tickers:
         except Exception as e:
             st.warning(f"News analysis failed for {ticker}: {e}")
 
+            
+
 elif query:
     st.info("👈 Select stocks and click **Run Analysis** to begin.")
+
+
+# =====================================================
+# Disclaimer & Footer
+# =====================================================
+
+st.markdown("---")
+
+with st.expander("⚠️ Disclaimer & Legal Notice", expanded=False):
+    st.markdown("""
+    **Market & Investment Disclaimer**
+
+    This application is built **for educational and informational purposes only**.  
+    It does **not constitute financial, investment, or trading advice**.
+
+    - Stock prices, predictions, and sentiment analysis are based on **historical data, public news sources, and machine learning models**
+    - Financial markets are subject to **sudden volatility, macroeconomic events, and unforeseen risks**
+    - Past performance is **not indicative of future results**
+    - Real-time market data and news may be **delayed or incomplete**
+
+    **Users are strongly advised to consult a certified financial advisor before making investment decisions.**
+    """)
+
+st.markdown(
+    """
+    <div style="text-align:center; font-size:13px; color:gray;">
+        Developed by <b>Suresh Mahalingam Konar</b> | 
+        © 2025 All Rights Reserved<br>
+        Data Source: Yahoo Finance • Google News • Public APIs
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
