@@ -12,6 +12,7 @@ from src.prediction import predict_prophet, predict_lstm, classify_price_trend
 from src.portfolio_metrics import var_cvar
 from src.news_sentiment import get_combined_sentiment
 from src.market_top_stocks import get_top_stocks
+from time import sleep
 
 # =====================================================
 # Utility: Format Ticker Correctly
@@ -140,7 +141,8 @@ def format_ticker(symbol, market):
 #     if "Recommendation" not in df.columns:
 #         df["Recommendation"] = "⚠️ Neutral / Hold , Since no news data found"
 
-#     return df
+#     return df 
+
 
 def build_top_market_snapshot(market: str):
     """
@@ -366,21 +368,42 @@ if run_button and selected_tickers:
     # ----------------------------
     # Fetch Stock Data
     # ----------------------------
+    # st.subheader("📊 Stock Price Data")
+
+    # try:
+    #     price_data = fetch_stock_data(selected_tickers, start_date, end_date)
+
+    #     # 🔴 Critical Guard
+    #     if price_data.empty:
+    #         st.error("❌ No data returned from Yahoo Finance. Check ticker or date range.")
+    #         st.stop()
+    #     else:
+    #         st.line_chart(price_data)
+
+    # except Exception as e:
+    #     st.error(f"Error fetching stock data: {e}")
+    #     st.stop()
+
     st.subheader("📊 Stock Price Data")
 
     try:
         price_data = fetch_stock_data(selected_tickers, start_date, end_date)
 
-        # 🔴 Critical Guard
         if price_data.empty:
-            st.error("❌ No data returned from Yahoo Finance. Check ticker or date range.")
-            st.stop()
-
-        st.line_chart(price_data)
+            st.warning("No data found for selected tickers.")
+        elif price_data.shape[0] < 2:
+            # Not enough data for a line chart
+            st.info("Not enough historical data to plot chart. Showing current values instead:")
+            for ticker in price_data.columns:
+                st.metric(f"{ticker} Current Price", f"{price_data[ticker].iloc[-1]:.2f}")
+        else:
+            st.line_chart(price_data)
+            st.write("Latest Prices:")
+            st.dataframe(price_data.tail(5))  # Show last 5 rows
 
     except Exception as e:
         st.error(f"Error fetching stock data: {e}")
-        st.stop()
+
 
     # ----------------------------
     # Portfolio Optimization
@@ -419,15 +442,30 @@ if run_button and selected_tickers:
     # Efficient Frontier
     # ----------------------------
     st.subheader("📈 Efficient Frontier")
-
     if returns.shape[1] >= 2:
-        try:
-            fig = plot_efficient_frontier(returns, risk_free_rate=risk_free_rate)
-            st.pyplot(fig)
-        except Exception as e:
-            st.warning(f"Efficient Frontier failed: {e}")
+        fig = plot_efficient_frontier(returns, risk_free_rate=risk_free_rate)
+        st.pyplot(fig)
     else:
-        st.warning("Efficient Frontier requires at least 2 stocks.")
+        # Single stock: plot risk vs return point
+        stock_ret = returns.mean() * 252  # annualized
+        stock_vol = returns.std() * np.sqrt(252)  # annualized
+
+        fig, ax = plt.subplots()
+        ax.scatter(stock_vol, stock_ret, color="blue", s=100, label="Stock")
+        ax.axhline(y=risk_free_rate, color="green", linestyle="--", label="Risk-Free Rate")
+        ax.set_xlabel("Annualized Volatility (Risk)")
+        ax.set_ylabel("Annualized Return")
+        ax.set_title("Single Stock: Risk vs Return (No Diversification)")
+        ax.legend()
+        st.pyplot(fig)
+
+        st.info("""
+        **Efficient Frontier Info**
+        - Only one stock selected.
+        - This point shows the stock's annualized return vs risk (volatility).
+        - With multiple stocks, the curve shows **optimal diversification** options.
+        """)
+
 
     # ----------------------------
     # Risk Metrics
@@ -474,51 +512,338 @@ if run_button and selected_tickers:
     # ----------------------------
     # News Sentiment & Recommendation
     # ----------------------------
+    # st.subheader("📰 News Sentiment & Investment Recommendation")
+
+    # for ticker, pred in predictions.items():
+    #     try:
+    #         sentiment_data = get_combined_sentiment(ticker, ticker)
+
+    #         sentiment = sentiment_data["sentiment"]
+    #         score = sentiment_data["score"]
+    #         headlines = sentiment_data["headlines"]
+
+    #         trend = classify_price_trend(
+    #             pred["current_price"],
+    #             pred["predicted_price"]
+    #         )
+
+    #         # if score >= 0.6:
+    #         #     decision = "🚀 Strong Buy (News Driven)"
+    #         #     color = "green"
+    #         # elif score >= 0.25:
+    #         #     decision = "🟢 Buy"
+    #         #     color = "green"
+    #         # elif score <= -0.6:
+    #         #     decision = "❌ Strong Avoid"
+    #         #     color = "red"
+    #         # elif score <= -0.25:
+    #         #     decision = "🔻 Avoid"
+    #         #     color = "red"
+    #         # else:
+    #         #     decision = "🟡 Neutral / No Active Signal"
+    #         #     color = "gray"
+
+    #         # Example: Compute confidence score
+    #         price_change_pct = ((pred["predicted_price"] - pred["current_price"]) / pred["current_price"]) * 100
+    #         price_weight = 0.6   # weight for prediction
+    #         news_weight = 0.4    # weight for news sentiment
+
+    #         # News score is -1 to +1, normalize to 0-100
+    #         news_score_scaled = (score + 1) / 2 * 100
+
+    #         # Price score scaled
+    #         price_score_scaled = min(max(price_change_pct, -20), 20)  # cap extreme values
+    #         price_score_scaled = (price_score_scaled + 20) / 40 * 100  # map -20..20% -> 0..100
+
+    #         # Combined confidence score
+    #         confidence = price_weight * price_score_scaled + news_weight * news_score_scaled
+    #         confidence = round(confidence, 1)
+
+
+    #         # ----------------------------
+    #         # Decision Logic (Prediction + News)
+    #         # ----------------------------
+    #         if trend == "Up":
+    #             if score >= 0.4:
+    #                 decision = "🚀 Strong Buy"
+    #                 color = "green"
+    #             elif score >= 0.1:
+    #                 decision = "🟢 Buy"
+    #                 color = "green"
+    #             elif score <= -0.3:
+    #                 decision = "⚠️ Cautious Buy (News Risk)"
+    #                 color = "orange"
+    #             else:
+    #                 decision = "🟢 Buy"
+    #                 color = "green"
+
+    #         elif trend == "Sideways":
+    #             if score >= 0.4:
+    #                 decision = "🟡 Accumulate"
+    #                 color = "orange"
+    #             elif score <= -0.3:
+    #                 decision = "🔻 Reduce Exposure"
+    #                 color = "orange"
+    #             else:
+    #                 decision = "🟡 Hold"
+    #                 color = "gray"
+
+    #         elif trend == "Down":
+    #             if score <= -0.4:
+    #                 decision = "❌ Strong Avoid"
+    #                 color = "red"
+    #             elif score >= 0.3:
+    #                 decision = "⚠️ Speculative Buy"
+    #                 color = "orange"
+    #             else:
+    #                 decision = "🔻 Avoid"
+    #                 color = "red"
+
+
+    #         st.markdown(f"### {ticker}")
+    #         st.write(f"**Price Trend:** {trend}")
+    #         st.write(f"**News Sentiment:** {sentiment} (Score: {score:.2f})")
+    #         st.markdown(f"### 📌 Recommendation: :{color}[{decision}]")
+
+    #         if headlines:
+    #             with st.expander("Latest News Headlines"):
+    #                 for h in headlines:
+    #                     st.write(f"- {h}")
+
+    #         # Determine color gradient
+    #         # Thresholds for combined recommendation
+    #         # if confidence >= 75:
+    #         #     combined_decision = "🚀 Strong Buy"
+    #         #     bar_color = "#00b050"  # green
+    #         # elif confidence >= 50:
+    #         #     combined_decision = "🟢 Buy"
+    #         #     bar_color = "#ffc000"  # yellow
+    #         # elif confidence >= 25:
+    #         #     combined_decision = "🟡 Hold / Monitor"
+    #         #     bar_color = "#ff9900"  # orange
+    #         # else:
+    #         #     combined_decision = "❌ Strong Avoid"
+    #         #     bar_color = "#ff0000"  # red
+
+
+    #         # # HTML progress bar with tooltip
+    #         # # st.markdown(
+    #         # #     f"""
+    #         # #     <div style='border:1px solid #ddd; border-radius:5px; padding:2px; width:100%;' title='Confidence: {confidence}%'>
+    #         # #         <div style='width:{confidence}%; background-color:{color}; padding:5px 0; border-radius:5px; text-align:center; color:white; font-weight:bold;'>
+    #         # #             {confidence}%
+    #         # #         </div>
+    #         # #     </div>
+    #         # #     """,
+    #         # #     unsafe_allow_html=True
+    #         # # )
+
+    #         # st.progress(confidence / 100, text=f"Confidence Score: {confidence}%")
+    #         # st.metric(
+    #         #     label=f"Combined Recommendation: {combined_decision}",
+    #         #     value=f"{confidence:.1f}%",
+    #         #     delta=None,
+    #         #     help="Confidence score combines price trend (60%) and news sentiment (40%)"
+    #         # )
+
+    #         # st.markdown(f"**Confidence Score:** {confidence:.1f}% 🔹")
+    #         # with st.expander("How confidence is calculated"):
+    #         #     st.write("""
+    #         #     - 60% weight: predicted price trend magnitude
+    #         #     - 40% weight: news sentiment score
+    #         #     - Scale: 0–100%
+    #         #     """)
+    
+
+    #         # c1, c2 = st.columns([1,3])
+    #         # with c1:
+    #         #     st.metric("Predicted Return", f"{price_change_pct:.2f}%")
+    #         # with c2:
+    #         #     st.markdown(f"""
+    #         #     <div title="Confidence = 0.6*Price + 0.4*News">
+    #         #         <div style='border:1px solid #ddd; border-radius:5px; padding:2px; width:100%;'>
+    #         #             <div style='width:{confidence}%; background-color:{bar_color}; padding:5px 0; border-radius:5px; text-align:center; color:white; font-weight:bold;'>
+    #         #                 {confidence}%
+    #         #             </div>
+    #         #         </div>
+    #         #     </div>
+    #         #     """, unsafe_allow_html=True)
+
+    #         # ----------------------------
+    #         # Recommendation + Confidence Bar
+    #         # ----------------------------
+    #         if confidence >= 75:
+    #             combined_decision = "🚀 Strong Buy"
+    #             bar_color = "#00b050"  # green
+    #         elif confidence >= 50:
+    #             combined_decision = "🟢 Buy"
+    #             bar_color = "#ffc000"  # yellow
+    #         elif confidence >= 25:
+    #             combined_decision = "🟡 Hold / Monitor"
+    #             bar_color = "#ff9900"  # orange
+    #         else:
+    #             combined_decision = "❌ Strong Avoid"
+    #             bar_color = "#ff0000"  # red
+
+    #         # Show the textual recommendation with Streamlit metric
+    #         st.metric(
+    #             label=f"Combined Recommendation: {combined_decision}",
+    #             value=f"{confidence:.1f}%",
+    #             delta=None,
+    #             help="Confidence score combines price trend (60%) and news sentiment (40%)"
+    #         )
+
+    #         # Custom HTML colored progress bar
+    #         st.markdown(f"""
+    #         <div style='border:1px solid #ddd; border-radius:5px; padding:2px; width:100%; margin-top:5px;'>
+    #             <div style='width:{confidence}%; background-color:{bar_color}; padding:5px 0; border-radius:5px; 
+    #                         text-align:center; color:white; font-weight:bold;'>
+    #                 {confidence:.1f}%
+    #             </div>
+    #         </div>
+    #         <br>
+    #         """, unsafe_allow_html=True)
+
+    #         # Show additional explanation in an expander
+    #         with st.expander("How confidence is calculated"):
+    #             st.write("""
+    #             - **60% weight** → Predicted price trend magnitude
+    #             - **40% weight** → News sentiment score
+    #             - **Scale:** 0–100%
+    #             - **Bar color:** Green = high confidence, Yellow/Orange = moderate, Red = low confidence
+    #             """)
+
+
+
+    #     except Exception as e:
+    #         st.warning(f"News analysis failed for {ticker}: {e}")
+
     st.subheader("📰 News Sentiment & Investment Recommendation")
 
-    for ticker, pred in predictions.items():
+    tickers_list = list(predictions.keys())
+    total_tickers = len(tickers_list)
+
+    # Create a progress bar and a placeholder for text
+    progress_bar = st.progress(0)
+    progress_text = st.empty()
+
+    for idx, ticker in enumerate(tickers_list, 1):
+        progress_text.text(f"Processing {ticker} ({idx}/{total_tickers})...")
+
         try:
+            # Fetch sentiment & prediction
             sentiment_data = get_combined_sentiment(ticker, ticker)
+            pred = predictions[ticker]
 
             sentiment = sentiment_data["sentiment"]
             score = sentiment_data["score"]
             headlines = sentiment_data["headlines"]
 
-            trend = classify_price_trend(
-                pred["current_price"],
-                pred["predicted_price"]
-            )
+            trend = classify_price_trend(pred["current_price"], pred["predicted_price"])
 
-            if score >= 0.6:
-                decision = "🚀 Strong Buy (News Driven)"
-                color = "green"
-            elif score >= 0.25:
-                decision = "🟢 Buy"
-                color = "green"
-            elif score <= -0.6:
-                decision = "❌ Strong Avoid"
-                color = "red"
-            elif score <= -0.25:
-                decision = "🔻 Avoid"
-                color = "red"
+            # Compute combined confidence
+            price_change_pct = ((pred["predicted_price"] - pred["current_price"]) / pred["current_price"]) * 100
+            price_weight = 0.6
+            news_weight = 0.4
+
+            news_score_scaled = (score + 1) / 2 * 100
+            price_score_scaled = min(max(price_change_pct, -20), 20)
+            price_score_scaled = (price_score_scaled + 20) / 40 * 100
+
+            confidence = round(price_weight * price_score_scaled + news_weight * news_score_scaled, 1)
+
+            # Decision based on trend + sentiment
+            if trend == "Up":
+                if score >= 0.4:
+                    decision = "🚀 Strong Buy"
+                    color = "green"
+                elif score >= 0.1:
+                    decision = "🟢 Buy"
+                    color = "green"
+                elif score <= -0.3:
+                    decision = "⚠️ Cautious Buy (News Risk)"
+                    color = "orange"
+                else:
+                    decision = "🟢 Buy"
+                    color = "green"
+
+            elif trend == "Sideways":
+                if score >= 0.4:
+                    decision = "🟡 Accumulate"
+                    color = "orange"
+                elif score <= -0.3:
+                    decision = "🔻 Reduce Exposure"
+                    color = "orange"
+                else:
+                    decision = "🟡 Hold"
+                    color = "gray"
+
+            elif trend == "Down":
+                if score <= -0.4:
+                    decision = "❌ Strong Avoid"
+                    color = "red"
+                elif score >= 0.3:
+                    decision = "⚠️ Speculative Buy"
+                    color = "orange"
+                else:
+                    decision = "🔻 Avoid"
+                    color = "red"
+
+            # Combined confidence bar color
+            if confidence >= 75:
+                combined_decision = "🚀 Strong Buy"
+                bar_color = "#00b050"
+            elif confidence >= 50:
+                combined_decision = "🟢 Buy"
+                bar_color = "#ffc000"
+            elif confidence >= 25:
+                combined_decision = "🟡 Hold / Monitor"
+                bar_color = "#ff9900"
             else:
-                decision = "🟡 Neutral / No Active Signal"
-                color = "gray"
+                combined_decision = "❌ Strong Avoid"
+                bar_color = "#ff0000"
 
+            # Display results
             st.markdown(f"### {ticker}")
             st.write(f"**Price Trend:** {trend}")
             st.write(f"**News Sentiment:** {sentiment} (Score: {score:.2f})")
             st.markdown(f"### 📌 Recommendation: :{color}[{decision}]")
 
+            # News headlines
             if headlines:
                 with st.expander("Latest News Headlines"):
                     for h in headlines:
                         st.write(f"- {h}")
 
+            # Confidence bar
+            st.markdown(f"""
+            <div style='border:1px solid #ddd; border-radius:5px; padding:2px; width:100%; margin-top:5px;'>
+                <div style='width:{confidence}%; background-color:{bar_color}; padding:5px 0; border-radius:5px; 
+                            text-align:center; color:white; font-weight:bold;'>
+                    {confidence:.1f}%
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("How confidence is calculated"):
+                st.write("""
+                - **60% weight** → Predicted price trend magnitude
+                - **40% weight** → News sentiment score
+                - **Scale:** 0–100%
+                - **Bar color:** Green = high confidence, Yellow/Orange = moderate, Red = low confidence
+                """)
+
         except Exception as e:
             st.warning(f"News analysis failed for {ticker}: {e}")
 
-            
+        # Update progress bar dynamically
+        progress = idx / total_tickers
+        progress_bar.progress(progress)
+        sleep(0.1)  # optional, simulate small delay so user sees progress
+
+    progress_text.text(f"✅ Analysis completed for {total_tickers} stocks")
+
+
 
 elif query:
     st.info("👈 Select stocks and click **Run Analysis** to begin.")
@@ -550,9 +875,7 @@ with st.expander("⚠️ Disclaimer & Legal Notice", expanded=False):
     - Past performance is **not a guarantee of future results**
 
     **Always consult a certified financial advisor before investing.**
-
-    ---
-    **Last Updated:** {last_updated}
+                
     """)
 
 st.markdown("---")    
