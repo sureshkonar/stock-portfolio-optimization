@@ -11,7 +11,7 @@
 ---
 
 ## 🌐 Live Demo
-- Streamlit App: [Click Here](https://stock-portfolio-optimization-suresh-konar.streamlit.app/)  
+- Streamlit App: [Click Here](https://stockiq-insights.streamlit.app/)  
 - GitHub Repo: [Click Here](https://github.com/sureshkonar/stock-portfolio-optimization)
 
 ---
