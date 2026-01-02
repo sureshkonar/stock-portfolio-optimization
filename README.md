@@ -1,4 +1,4 @@
-# 📈 Stock Portfolio Optimization & Intelligence Platform
+# 📈 StockIQ Insights : Stock Portfolio Optimization & Intelligence Platform
 
 ![Python](https://img.shields.io/badge/python-3.13-blue?logo=python)
 ![Streamlit](https://img.shields.io/badge/streamlit-1.30-orange?logo=streamlit)

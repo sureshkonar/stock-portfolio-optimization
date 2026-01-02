@@ -13,6 +13,7 @@ from src.portfolio_metrics import var_cvar
 from src.news_sentiment import get_combined_sentiment
 from src.market_top_stocks import get_top_stocks
 from time import sleep
+import base64
 
 # =====================================================
 # Utility: Format Ticker Correctly
@@ -264,9 +265,83 @@ TOP_50 = {
 # =====================================================
 # Streamlit Page Config
 # =====================================================
-st.set_page_config(page_title="Global Stock Portfolio Optimizer", layout="wide")
-st.title("📈 Global Stock Portfolio Optimization Tool")
-st.caption("Supports NYSE • NSE • BSE | Built using Python & Yahoo Finance")
+# st.set_page_config(page_title="Global Stock Portfolio Optimizer",page_icon="assets/stockiq_insights_logo.png", layout="wide")
+
+
+# st.title("📈 StockIQ Insights")
+# st.caption("Prediction • News Sentiment • Confidence-driven Decisions")
+# st.caption("Supports NYSE • NSE • BSE | Built using Python & Yahoo Finance")
+
+st.set_page_config(
+    page_title="StockIQ Insights",
+    page_icon="assets/stockiq_insights_logo.png",
+    layout="wide"
+)
+
+# st.image("assets/stockiq_insights_logo.png", width=220)
+# st.title("StockIQ Insights")
+# st.caption("Prediction • News Sentiment • Confidence Engine")
+
+col1, col2 = st.columns([1, 7])
+
+# with col1:
+#     st.image("assets/stockiq_insights_logo.png", width=300)
+
+# with col2:
+#     st.markdown(
+#         """
+#         <h1 style="margin-bottom:0;">StockIQ Insights</h1>
+#         <p style="color:gray; margin-top:-5px;">
+#         Prediction • News Sentiment • Confidence Engine
+#         </p>
+#         """,
+#         unsafe_allow_html=True
+#     )
+
+# with open("assets/stockiq_insights_logo.png", "rb") as f:
+#     img_bytes = f.read()
+# encoded = base64.b64encode(img_bytes).decode()
+
+# st.markdown(
+#     """
+#     <table>
+#         <tr>
+#             <td style="vertical-align: middle; padding-right:12px;">
+#                 <img src="assets/stockiq_insights_logo.png;base64,{encoded}" width="65">
+#             </td>
+#             <td style="vertical-align: middle;">
+#                 <h1 style="margin:0;">StockIQ Insights</h1>
+#             </td>
+#         </tr>
+#     </table>
+#     """,
+#     unsafe_allow_html=True
+# )
+
+with open("assets/stockiq_insights_logo.png", "rb") as f:
+    img_bytes = f.read()
+encoded = base64.b64encode(img_bytes).decode()
+
+st.markdown(f"""
+<table>
+<tr>
+    <td style="vertical-align: middle; padding-right:12px;">
+        <img src="data:image/png;base64,{encoded}" width="150">
+    </td>
+    <td style="vertical-align: middle;">
+        <h1 style="margin:0;">StockIQ Insights</h1>
+        <p style="color:gray; margin-top:-5px;">
+         Prediction • News Sentiment • Confidence Engine
+         </p>
+    </td>
+</tr>
+</table>
+""", unsafe_allow_html=True)
+
+
+
+
+
 
 # =====================================================
 # 🔥 NEW: MARKET TOP 50 VIEW (INDEPENDENT)
@@ -885,7 +960,9 @@ st.markdown(
     f"""
     <div style="text-align:center; font-size:13px; color:gray;">
         Developed by <b>Suresh Mahalingam Konar</b><br>
-        © 2025 All Rights Reserved<br>
+        StockIQ Insights     
+        © 2026 All Rights Reserved<br>
+        This software is for educational and informational purposes only.<br>
         Data Sources: Yahoo Finance • Google News • Public APIs
     </div>
     """,
