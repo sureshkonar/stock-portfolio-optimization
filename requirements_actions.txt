@@ -11,3 +11,5 @@ tensorflow
 gnews
 vaderSentiment
 streamlit
+xlsxwriter
+openpyxl
