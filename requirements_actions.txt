@@ -1,0 +1,12 @@
+yfinance
+pandas
+numpy
+matplotlib
+scikit-learn
+prophet
+textblob
+requests
+beautifulsoup4
+tensorflow
+gnews
+vaderSentiment
