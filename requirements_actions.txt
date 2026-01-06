@@ -10,3 +10,4 @@ beautifulsoup4
 tensorflow
 gnews
 vaderSentiment
+streamlit
