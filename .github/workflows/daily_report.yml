@@ -27,6 +27,14 @@ jobs:
         run: |
           python generate_daily_report.py
 
+      - name: 📧 Send Email Notification
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: |
+          python send_email.py
+
       - name: 📤 Upload Excel Artifact
         uses: actions/upload-artifact@v4
         with:
