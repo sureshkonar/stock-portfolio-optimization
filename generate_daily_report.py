@@ -476,35 +476,35 @@ def append_to_excel(df, sheet_name, file_name):
     if df.empty:
         return
 
-    # Case 1: File does not exist OR file is empty
+    # If file missing or empty → create fresh
     if not os.path.exists(file_name) or os.path.getsize(file_name) == 0:
         df.to_excel(file_name, sheet_name=sheet_name, index=False)
         return
 
-    # Case 2: File exists → try loading safely
     try:
-        book = load_workbook(file_name)
+        with pd.ExcelWriter(
+            file_name,
+            engine="openpyxl",
+            mode="a",
+            if_sheet_exists="overlay"
+        ) as writer:
+
+            if sheet_name in writer.book.sheetnames:
+                start_row = writer.book[sheet_name].max_row
+                df.to_excel(
+                    writer,
+                    sheet_name=sheet_name,
+                    index=False,
+                    header=False,
+                    startrow=start_row
+                )
+            else:
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+
     except Exception as e:
-        print(f"⚠️ Excel file corrupted. Recreating file. Reason: {e}")
+        print(f"⚠️ Excel corrupted. Recreating file. Reason: {e}")
         os.remove(file_name)
         df.to_excel(file_name, sheet_name=sheet_name, index=False)
-        return
-
-    # Safe append
-    with pd.ExcelWriter(file_name, engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
-        writer.book = book
-
-        if sheet_name in book.sheetnames:
-            start_row = book[sheet_name].max_row
-            df.to_excel(
-                writer,
-                sheet_name=sheet_name,
-                index=False,
-                header=False,
-                startrow=start_row
-            )
-        else:
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
 
 
 # -----------------------------
