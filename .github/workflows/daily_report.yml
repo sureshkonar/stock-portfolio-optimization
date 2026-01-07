@@ -35,6 +35,17 @@ jobs:
         run: |
           python send_email.py
 
+      - name: Commit and push updated Excel
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add Daily_StockIQ_Insights.xlsx
+
+          git diff --cached --quiet || git commit -m "📊 Daily StockIQ Insights update ($(date +'%Y-%m-%d'))"
+
+          git push    
+
       - name: 📤 Upload Excel Artifact
         uses: actions/upload-artifact@v4
         with:
