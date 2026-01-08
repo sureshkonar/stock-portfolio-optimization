@@ -15,6 +15,9 @@ msg["From"] = EMAIL_USER
 msg["To"] = EMAIL_TO
 
 msg.set_content(f"""
+************** This is a auto-generated email **************
+************** Please do not reply *************************
+                      
 Hello,
 
 Your Daily StockIQ Insights Report has been generated successfully.
