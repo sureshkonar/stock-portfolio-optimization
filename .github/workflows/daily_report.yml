@@ -27,13 +27,13 @@ jobs:
         run: |
           python generate_daily_report.py
 
-      - name: 📧 Send Email Notification
-        env:
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-        run: |
-          python send_email.py
+      # - name: 📧 Send Email Notification
+        # env:
+        #   EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        #   EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        #   EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        # run: |
+        #   python send_email.py
 
       - name: Commit and push updated Excel
         run: |
